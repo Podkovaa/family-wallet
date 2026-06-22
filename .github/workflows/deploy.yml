@@ -1,0 +1,69 @@
+name: Deploy to Google Apps Script
+
+# Tự động build + đẩy code lên GAS và deploy lại (giữ nguyên URL web app).
+# CHỈ chạy khi bạn đã cấu hình đủ secret (xem README → "Tự động build & deploy").
+# Thiếu secret → job tự bỏ qua sạch sẽ (không báo lỗi đỏ).
+on:
+  workflow_dispatch: # cho phép bấm chạy tay trong tab Actions
+  push:
+    branches: [main]
+
+# Không cho 2 lần deploy chạy chồng nhau.
+concurrency:
+  group: gas-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Push & Deploy
+    runs-on: ubuntu-latest
+    env:
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+    steps:
+      - name: Kiểm tra đã cấu hình secret chưa
+        id: guard
+        run: |
+          if [ -z "$CLASPRC_JSON" ] || [ -z "$SCRIPT_ID" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Chưa cấu hình secret CLASPRC_JSON/SCRIPT_ID — bỏ qua deploy. Xem README mục 'Tự động build & deploy'."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout mã nguồn
+        if: steps.guard.outputs.configured == 'true'
+        uses: actions/checkout@v4
+
+      - name: Cài Node.js 20
+        if: steps.guard.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cài thư viện
+        if: steps.guard.outputs.configured == 'true'
+        run: npm ci
+
+      - name: Build single-file
+        if: steps.guard.outputs.configured == 'true'
+        run: npm run build
+
+      - name: Cấu hình clasp (auth + scriptId)
+        if: steps.guard.outputs.configured == 'true'
+        run: |
+          npm install -g @google/clasp@3
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          printf '{ "scriptId": "%s", "rootDir": "gas" }\n' "$SCRIPT_ID" > .clasp.json
+
+      - name: Đẩy code & deploy (giữ URL nếu có DEPLOYMENT_ID)
+        if: steps.guard.outputs.configured == 'true'
+        run: |
+          clasp push -f
+          if [ -n "$DEPLOYMENT_ID" ]; then
+            clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "CI deploy ${GITHUB_SHA::7}"
+          else
+            clasp deploy --description "CI deploy ${GITHUB_SHA::7}"
+          fi

@@ -1,0 +1,39 @@
+name: CI
+
+# Kiểm tra mỗi lần push hoặc mở Pull Request vào nhánh main:
+# cài thư viện → chạy test → build single-file. Không cần secret nào.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cài thư viện (sạch, theo package-lock)
+        run: npm ci
+
+      - name: Chạy unit test (Vitest)
+        run: npm test
+
+      - name: Build single-file (tsc + vite → gas/index.html)
+        run: npm run build
+
+      - name: Lưu bản build làm artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gas-bundle
+          path: gas/index.html
+          if-no-files-found: error

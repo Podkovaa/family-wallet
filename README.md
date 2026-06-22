@@ -7,6 +7,13 @@ Chạy hoàn toàn **miễn phí** trên hạ tầng Google — không cần ser
 
 Backend: **Google Apps Script + Google Sheets** · Frontend: **React + TypeScript** (build thành **một file HTML** duy nhất)
 
+[![CI](https://github.com/Podkovaa/family-wallet/actions/workflows/ci.yml/badge.svg)](https://github.com/Podkovaa/family-wallet/actions/workflows/ci.yml)
+[![Deploy to GAS](https://github.com/Podkovaa/family-wallet/actions/workflows/deploy.yml/badge.svg)](https://github.com/Podkovaa/family-wallet/actions/workflows/deploy.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+![React](https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)
+![Google Apps Script](https://img.shields.io/badge/Apps%20Script-V8-4285F4?logo=google&logoColor=white)
+
 </div>
 
 ---
@@ -14,6 +21,7 @@ Backend: **Google Apps Script + Google Sheets** · Frontend: **React + TypeScrip
 ## 📑 Mục lục
 
 - [Tính năng chính](#-tính-năng-chính)
+- [📸 Ảnh chụp màn hình](#-ảnh-chụp-màn-hình)
 - [Công nghệ & cách hoạt động](#-công-nghệ--cách-hoạt-động)
 - [Cấu trúc thư mục](#-cấu-trúc-thư-mục)
 - [🚀 HƯỚNG DẪN THIẾT LẬP TỪ ĐẦU (cho người mới)](#-hướng-dẫn-thiết-lập-từ-đầu-cho-người-mới)
@@ -27,6 +35,7 @@ Backend: **Google Apps Script + Google Sheets** · Frontend: **React + TypeScrip
   - [Bước 7 — Mở app lần đầu & mời thành viên](#bước-7--mở-app-lần-đầu--mời-thành-viên)
   - [Bước 8 — Bật cảnh báo Telegram (tuỳ chọn)](#bước-8--bật-cảnh-báo-telegram-tuỳ-chọn)
 - [🔄 Quy trình cập nhật code (giữ nguyên link)](#-quy-trình-cập-nhật-code-giữ-nguyên-link)
+- [🤖 Tự động build & deploy (GitHub Actions)](#-tự-động-build--deploy-github-actions)
 - [👀 Xem thử nhanh không cần Google](#-xem-thử-nhanh-không-cần-google)
 - [🧰 Lệnh thường dùng](#-lệnh-thường-dùng)
 - [🩺 Xử lý sự cố thường gặp](#-xử-lý-sự-cố-thường-gặp)
@@ -45,6 +54,16 @@ Backend: **Google Apps Script + Google Sheets** · Frontend: **React + TypeScrip
 - **Đa người dùng** với phân quyền **admin / thành viên**, mỗi giao dịch ghi lại người tạo.
 - **Cảnh báo tự động** qua **Email** và **Telegram** theo 4 ngưỡng (vượt hạn mức, hũ dưới sàn, dòng tiền âm, mục tiêu chậm) + **tổng kết hằng tuần**.
 - **Giao diện tối / sáng / theo hệ thống**, tối ưu cho điện thoại, hỗ trợ "Thêm vào màn hình chính" (PWA).
+
+## 📸 Ảnh chụp màn hình
+
+> _Đang cập nhật._ Đặt ảnh vào `docs/screenshots/` rồi bỏ chú thích các dòng dưới đây (đổi tên file cho khớp).
+
+<!--
+| Tổng quan | Giao dịch | Mục tiêu |
+|---|---|---|
+| ![Tổng quan](docs/screenshots/dashboard.png) | ![Giao dịch](docs/screenshots/transactions.png) | ![Mục tiêu](docs/screenshots/goals.png) |
+-->
 
 ## 🏗 Công nghệ & cách hoạt động
 
@@ -250,6 +269,27 @@ clasp deploy --deploymentId <DEPLOYMENT_ID_CỦA_BẠN>       # tạo phiên b�
 > ⚠️ Nếu chạy `clasp deploy` **không kèm** `--deploymentId`, clasp tạo một deployment **mới với link khác** — lúc đó phải gửi lại link cho mọi người. Luôn kèm `--deploymentId` để link cố định.
 >
 > Deployment tự sinh tên `@HEAD` là **chỉ-đọc**, không deploy đè vào nó được — hãy dùng deployment do bạn tự tạo ở Bước 6.
+
+## 🤖 Tự động build & deploy (GitHub Actions)
+
+Repo có sẵn 2 workflow trong `.github/workflows/`:
+
+- **`ci.yml`** — *chạy tự động, không cần cấu hình gì*: mỗi lần push/PR vào `main` sẽ `npm ci` → chạy 46 test → build. Badge **CI** ở đầu README phản ánh kết quả này.
+- **`deploy.yml`** — *tự động build + đẩy lên GAS + deploy lại (giữ nguyên link)* mỗi khi push vào `main`. **Mặc định tự bỏ qua** cho tới khi bạn thêm đủ secret (nên repo vừa clone sẽ không tự đụng vào GAS).
+
+### Bật auto-deploy (tuỳ chọn)
+
+Vào **GitHub → repo → Settings → Secrets and variables → Actions → New repository secret** và thêm:
+
+| Secret | Giá trị | Cách lấy |
+|---|---|---|
+| `CLASPRC_JSON` | Toàn bộ nội dung file đăng nhập clasp | Mở `~/.clasprc.json` (sau khi `clasp login`) và copy **nguyên văn**. Windows: `notepad %USERPROFILE%\.clasprc.json` |
+| `SCRIPT_ID` | Script ID của dự án GAS | Lấy trong `.clasp.json` của bạn, hoặc *Project Settings* trên script.google.com |
+| `DEPLOYMENT_ID` | *(khuyến nghị)* để **giữ nguyên link** web app | Chuỗi `AKfycb...` in ra khi chạy `clasp deploy` lần đầu. Bỏ trống thì mỗi lần CI tạo link mới. |
+
+Từ lần push tiếp theo vào `main`, GitHub Actions sẽ tự build và cập nhật web app — bạn không cần chạy `clasp` thủ công nữa.
+
+> 🔒 **An toàn:** secret của GitHub **không** hiện trong log và **không** được cấp cho PR đến từ fork. Tuy vậy `CLASPRC_JSON` là token đăng nhập Google của bạn — chỉ nên bật trên repo bạn kiểm soát; nếu nghi ngờ lộ, chạy `clasp logout` rồi `clasp login` lại và cập nhật lại secret.
 
 ## 👀 Xem thử nhanh không cần Google
 
