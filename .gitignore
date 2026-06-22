@@ -1,0 +1,24 @@
+# ───────── Dependencies & caches ─────────
+node_modules/
+.vite/
+*.log
+
+# ───────── Build output (sinh tự động, KHÔNG commit) ─────────
+dist/
+# do `npm run build` sinh ra từ src/
+gas/index.html
+# bản xem thử local (postbuild)
+review.html
+
+# ───────── Cấu hình riêng máy / nhạy cảm ─────────
+# chứa scriptId riêng của bạn → dùng .clasp.json.example
+.clasp.json
+# token đăng nhập clasp (KHÔNG BAO GIỜ commit)
+.clasprc.json
+
+# ───────── File backup cũ (bản export minified trước đây) ─────────
+*.txt
+
+# ───────── OS ─────────
+.DS_Store
+Thumbs.db

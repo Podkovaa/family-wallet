@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#11151c" />
+    <!-- Cho phép "Thêm vào màn hình chính" trên iOS (chế độ standalone, không cần service worker) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Family Wallet" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/8335/8335085.png" />
+    <title>Family Wallet — Sổ Thu Chi Gia Đình</title>
+    <!-- Áp theme đã lưu TRƯỚC khi React render để tránh nháy sáng/tối -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('fw-theme') || 'dark';
+          var dark = t === 'dark' || (t === 'system' &&
+            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

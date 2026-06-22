@@ -1,0 +1,2 @@
+# Chuẩn hoá xuống dòng: lưu LF trong repo, tự chuyển theo HĐH khi checkout.
+* text=auto eol=lf
