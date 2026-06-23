@@ -14,8 +14,12 @@ chạy thật trên Android, DB là **Google Sheet riêng của từng user**. K
 2. **Bật API**: *Google Sheets API* + *Google Drive API*.
 3. **OAuth consent screen**: User type **External**; thêm scope:
    - `openid`, `email`, `profile`
-   - `https://www.googleapis.com/auth/drive.file`  ← chỉ file do app tạo → **né CASA**
-   - `https://www.googleapis.com/auth/spreadsheets`
+   - `https://www.googleapis.com/auth/drive.file`  ← file app **tạo** HOẶC user **chọn
+     qua Google Picker** → **né CASA**
+   - ⚠️ **TRÁNH** scope `.../auth/spreadsheets` (full) — đây là *restricted scope* →
+     kéo theo đánh giá CASA đắt. Với **ví chung có sẵn** (B2), cho thành viên **chọn
+     file qua Google Picker** để cấp quyền dưới `drive.file`, rồi Sheets API thao tác
+     trên đúng file đó. Giữ trọn lợi thế né CASA.
    - Giai đoạn đầu để **Testing** + thêm test users (chưa cần verify để chạy nội bộ).
 4. **Tạo OAuth Client ID**:
    - **Android client**: package name `com.familywallet.app` + **SHA-1** của keystore
@@ -53,21 +57,26 @@ secret vào repo — dùng biến/`strings.xml`).
 
 ---
 
-## Bước 3 — Tạo Sheet riêng cho user khi đăng ký
+## Bước 3 — Kết nối ví chung (B2: cả nhà dùng 1 sheet)
+
+> ĐÃ CHỐT B2 — **ví chung qua chia sẻ Drive**, KHÔNG tạo sheet riêng mỗi user.
 
 1. Sau đăng nhập: đọc `spreadsheetId` từ **`@capacitor/preferences`**.
-2. Nếu CHƯA có (user mới) → gọi Sheets API **`spreadsheets.create`** tạo file mới trên
-   Drive user, với các tab + header **giống `gas/Code.gs` init** (nguồn sự thật):
-   - `_Buckets` (kèm cột `F` công thức SUMIF số dư + cột `G` `floorAmount`),
+2. **Chủ nhà (admin) lần đầu**: có 2 trường hợp
+   - **Đã có ví GAS đang chạy** (bản web hiện tại) → chỉ cần **nhập/quét `spreadsheetId`
+     của sheet gia đình đó** vào app (hoặc chọn qua Google Picker). Dùng lại nguyên data.
+   - **Gia đình mới hoàn toàn** → app `spreadsheets.create` tạo sheet với tab/header/seed
+     **giống `gas/Code.gs` init** (`_Buckets` cột F SUMIF + G floorAmount,
      `_PaymentSources`, `_Transactions`, `_MonthlyBudget`, `_Goals`,
-     `_GoalContributions`, `_AlertLog`, `_Users`, `_Settings`.
-   - Seed dữ liệu mặc định (các hũ/nguồn tiền khởi tạo như bản GAS).
-   - User tạo file = **chủ sở hữu**; file nằm trong phạm vi `drive.file`.
-3. Lưu `spreadsheetId` vào Preferences. Lần mở sau đọc lại, không tạo trùng.
-4. (Tùy mô hình chia sẻ — xem Quyết định B) có thể cho phép **nhập spreadsheetId** của
-   gia đình thay vì tạo mới.
+     `_GoalContributions`, `_AlertLog`, `_Users`, `_Settings`).
+3. **Mời thành viên**: chủ cấp quyền sửa sheet cho email thành viên (Drive API
+   `permissions.create`, hoặc share thủ công). Thành viên mở app → **chọn sheet chung
+   qua Google Picker** (cấp quyền `drive.file` cho đúng file) → lưu `spreadsheetId`.
+   `_Users` giữ vai trò admin/member (Phase 2) — kiểm tra qua `getCurrentUser`.
+4. Lưu `spreadsheetId` vào Preferences; lần mở sau đọc lại, không tạo trùng.
 
-**Tái dùng**: bê nguyên phần khởi tạo sheet/headers/seed từ `gas/Code.gs` sang TS.
+**Tái dùng**: bê nguyên phần khởi tạo sheet/headers/seed từ `gas/Code.gs` sang TS (chỉ
+dùng khi tạo ví mới).
 
 ---
 
@@ -108,29 +117,33 @@ xuống đúng Sheet của user.
 
 ---
 
-## ⚠️ Quyết định kiến trúc PHẢI chốt trước (đổi phạm vi)
+## ✅ Quyết định kiến trúc ĐÃ CHỐT (2026-06-23): A2 + B2
 
-### A. Cảnh báo + tổng kết định kỳ = mất "server"
-Phase 4 (email/Telegram) và trigger tuần chạy **server-side trong GAS** (`MailApp`,
-`UrlFetchApp`, time-driven triggers). App mobile gọi **thẳng** Sheets → **không có
-server** để chạy nền/gửi mail. Các endpoint `sendTestAlert`/`weeklySummary`/
-`installTriggers`/`setTelegramBotToken`/`getAlertConfig` không còn chỗ chạy. Phương án:
-- **(a) Local notifications** trên máy (`@capacitor/local-notifications`) — kiểm ngưỡng
-  ngay sau giao dịch, nhắc tại thiết bị. Miễn phí, nhưng không có tổng kết khi app đóng.
-- **(b) Giữ một GAS mỏng** gắn vào sheet của user chỉ để chạy trigger gửi mail/Telegram
-  (lai). Phức tạp khi mỗi user 1 sheet.
-- **(c) Bỏ cảnh báo server trên mobile** ở v1, chỉ còn cảnh báo tức thì trong app.
-→ Đề xuất v1: **(a) + (c)**.
+**A2 — Giữ GAS gửi email/Telegram + tổng kết tuần.** **B2 — Ví chung qua chia sẻ Drive.**
+Hệ quả lớn (theo hướng tiết kiệm): **backend GAS + sheet chung đã có sẵn & đang chạy**
+(bản web hiện tại) → mobile chỉ là **thêm một client** vào hệ thống đó, không dựng lại
+backend.
 
-### B. Mô hình "cả nhà dùng chung" với mỗi user 1 Sheet
-Bản GAS: 1 sheet chung + whitelist `_Users`. Bản mobile per-user: ai tạo trước là chủ.
-Để cả nhà dùng chung 1 ví:
-- Chủ tạo spreadsheet → **chia sẻ quyền sửa** cho email thành viên (Drive API
-  `permissions.create`); thành viên nhập/nhận `spreadsheetId` đó trong app (không tạo
-  mới). `_Users` vẫn dùng để phân vai admin/member.
-- Hoặc mỗi user 1 ví độc lập (đơn giản hơn cho v1).
-→ Cần chủ dự án chốt: **chung ví** hay **ví riêng** ở v1.
+### Cảnh báo (A2) hoạt động thế nào
+- **GAS vẫn deploy, gắn vào sheet gia đình chung** — giữ nguyên `sendAlert_`/
+  `weeklySummary`/Telegram của Phase 4. Email/Telegram + tổng kết tuần **chạy y như cũ**.
+- ⚠️ Mobile ghi **thẳng** vào sheet (không qua GAS `addTransaction`) nên hook cảnh báo
+  **tức thì** sau giao dịch sẽ KHÔNG tự kích hoạt. Cách xử lý:
+  - Đổi `checkThresholds_` từ hook-tức-thì sang **time-trigger dày** (vd mỗi giờ) đọc
+    sheet → gửi nếu chạm ngưỡng. `_AlertLog` chống spam vẫn dùng. (sửa nhẹ ở `gas/Code.gs`)
+  - (Tùy chọn thêm) `@capacitor/local-notifications` để báo **tức thì tại máy** ngay khi
+    ghi giao dịch — cho phản hồi nhanh, không thay email/Telegram.
+- `getAlertConfig`/`setAlertSettings`/`setTelegramBotToken`: gọi qua Sheets (đọc/ghi
+  `_Settings`) hoặc giữ ở màn Cài đặt bản web; mobile có thể chỉ đọc.
 
-### C. Bảo mật token & quota
-Access token chỉ giữ trong bộ nhớ/Preferences, không log. Gộp call (`batchGet`/
-`batchUpdate`) để tránh chạm quota ~60 ghi/phút/user.
+### Ví chung (B2) — xem Bước 3 đã cập nhật
+Chủ dùng lại sheet GAS đang chạy (hoặc tạo mới nếu gia đình mới); mời thành viên bằng
+Drive share + thành viên chọn sheet qua Google Picker (giữ scope `drive.file`).
+
+### Bảo mật token & quota
+Access token chỉ giữ trong Preferences, không log. Gộp `batchGet`/`batchUpdate` để
+tránh quota ~60 ghi/phút/user (và quota thực thi GAS cho trigger cảnh báo).
+
+### Lưu ý chọn lựa kỹ thuật còn mở (không chặn, quyết khi code)
+- Tần suất time-trigger cảnh báo (mỗi giờ / vài giờ / ngày) — đổi độ "tức thì" lấy quota.
+- Có thêm local-notifications cho phản hồi tức thì hay không.
