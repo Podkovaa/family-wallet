@@ -28,47 +28,51 @@ UI React (../src)  ──►  callGAS(fn, args)  ──►  ┌ google.script.ru
 | Máy Mac | — | Chỉ cần cho build iOS. Android **không cần** |
 | Google Sheets/Drive API (`drive.file`) | **0đ** | Giữ ràng buộc miễn phí |
 
-## Cấu trúc
+## Cấu trúc (Capacitor đặt ở GỐC repo)
 
 ```
-mobile/
-├─ README.md            ← file này
-├─ capacitor.config.ts  ← cấu hình app (appId, webDir=www)
-├─ .gitignore           ← bỏ www/ android/ ios/ node_modules
-├─ www/                 ← (tự sinh) bản build web cho Capacitor bọc
-├─ android/             ← (tự sinh bởi `cap add android`)
-└─ ios/                 ← (tạo sau, khi làm iOS)
-
-../vite.config.mobile.ts  ← build ../src ra mobile/www (đa file, KHÔNG singlefile)
-../src/lib/sheetsAdapter.ts ← khung lớp dữ liệu Sheets API (việc chính còn lại)
+D:\pj02\
+├─ capacitor.config.ts   ← cấu hình app (appId, webDir = mobile/www)   [ở GỐC]
+├─ vite.config.mobile.ts ← build src/ ra mobile/www (đa file, KHÔNG singlefile)
+├─ package.json          ← chung 1 node_modules (đã có @capacitor/core/cli/android)
+├─ android/              ← (tự sinh bởi `npx cap add android`) — gitignore
+├─ ios/                  ← (tạo sau, khi làm iOS) — gitignore
+├─ src/lib/sheetsAdapter.ts ← khung lớp dữ liệu Sheets API (việc chính còn lại)
+└─ mobile/
+   ├─ README.md          ← file này
+   ├─ PLAN.md            ← kế hoạch chi tiết các bước
+   └─ www/               ← (tự sinh) bản build web cho Capacitor bọc — gitignore
 ```
 
-> Dùng **chung** `package.json` và `node_modules` ở gốc (đỡ cài 2 lần = tiết kiệm
-> đĩa + thời gian). Không tạo project node riêng trong `mobile/`.
+> Đặt Capacitor ở **gốc** (chuẩn Capacitor: project root = nơi có package.json →
+> android/ios sinh ở đây) để plugin/sync chạy ổn định và **dùng chung 1
+> node_modules** (rẻ, đúng tiêu chí). `android/` & `ios/` vẫn là 2 folder riêng.
 
-## Thiết lập lần đầu (chạy ở thư mục GỐC `D:\pj02`)
+## Thiết lập (chạy ở thư mục GỐC `D:\pj02`)
 
-> Yêu cầu: đã cài **Android Studio** (kèm Android SDK) cho bước build Android.
+### Đã làm sẵn (commit trên nhánh `mobile`)
+- Cài `@capacitor/core` + `@capacitor/cli` + `@capacitor/android` (v8).
+- `capacitor.config.ts` ở gốc; script `npm run build:mobile` và `npm run cap:android`.
+- Build web ra `mobile/www` **chạy OK** (đa file). Bản GAS vẫn 46/46 test xanh.
+
+### Việc anh cần làm để thấy app chạy (cần Android Studio)
+> ⚠️ Máy hiện **chưa có JDK + Android Studio** → đây là bước chặn duy nhất còn lại.
 
 ```bash
-# 1) Cài Capacitor + plugin đăng nhập Google (cập nhật package.json + lockfile)
-npm install -D @capacitor/cli
-npm install @capacitor/core @capacitor/android @codetrix-studio/capacitor-google-auth
+# 0) Cài Android Studio (kèm Android SDK + emulator) và JDK 17, đặt ANDROID_HOME.
 
-# 2) Build web app cho mobile (đa file) ra mobile/www
-npx vite build --config vite.config.mobile.ts
+# 1) Build web cho mobile (đã có script)
+npm run build:mobile          # = vite build --config vite.config.mobile.ts → mobile/www
 
-# 3) Khởi tạo Capacitor đọc cấu hình ở mobile/ rồi thêm nền tảng Android
-cd mobile
-npx cap add android      # sinh mobile/android (project Gradle)
-npx cap sync android     # đồng bộ www + plugin sang android
+# 2) Thêm nền tảng Android (sinh ./android ở GỐC) + đồng bộ
+npx cap add android
+npx cap sync android          # hoặc gộp bước 1+2 lần sau: npm run cap:android
 
-# 4) Mở Android Studio để chạy/emulator/xuất APK-AAB
+# 3) Mở Android Studio chạy emulator / xuất APK-AAB
 npx cap open android
 ```
 
-Lần build lại về sau: `npx vite build --config vite.config.mobile.ts` → `cd mobile &&
-npx cap sync android`.
+Lần sau chỉ cần: `npm run cap:android` rồi `npx cap open android`.
 
 ## Đăng nhập Google + tạo Sheet riêng cho user (việc chính còn lại)
 

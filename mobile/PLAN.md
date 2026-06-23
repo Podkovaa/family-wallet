@@ -109,8 +109,8 @@ dùng khi tạo ví mới).
 ## Bước 5 — Build & chạy Android
 
 ```bash
-npx vite build --config vite.config.mobile.ts
-cd mobile && npx cap sync android && npx cap open android
+npm run cap:android       # = build:mobile (→ mobile/www) + cap sync android
+npx cap open android      # mở Android Studio chạy emulator / xuất AAB
 ```
 Chạy trên emulator/thiết bị, đăng nhập Google thật, kiểm thêm/sửa/xoá giao dịch ghi
 xuống đúng Sheet của user.

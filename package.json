@@ -11,15 +11,20 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "push": "npm run build && clasp push -f"
+    "push": "npm run build && clasp push -f",
+    "build:mobile": "vite build --config vite.config.mobile.ts",
+    "cap:android": "npm run build:mobile && cap sync android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "chart.js": "4.5.1",
     "react": "18.3.1",
     "react-chartjs-2": "5.2.0",
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.1",
     "@types/google-apps-script": "1.0.83",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",

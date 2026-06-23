@@ -10,6 +10,13 @@ gas/index.html
 # bản xem thử local (postbuild)
 review.html
 
+# ───────── Mobile (Capacitor) ─────────
+# project native sinh bởi `npx cap add android|ios` (tái tạo được)
+/android/
+/ios/
+# bản build web cho Capacitor (sinh bởi vite.config.mobile.ts)
+mobile/www/
+
 # ───────── Cấu hình riêng máy / nhạy cảm ─────────
 # chứa scriptId riêng của bạn → dùng .clasp.json.example
 .clasp.json
