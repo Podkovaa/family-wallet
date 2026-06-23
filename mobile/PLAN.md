@@ -128,11 +128,13 @@ backend.
 - **GAS vẫn deploy, gắn vào sheet gia đình chung** — giữ nguyên `sendAlert_`/
   `weeklySummary`/Telegram của Phase 4. Email/Telegram + tổng kết tuần **chạy y như cũ**.
 - ⚠️ Mobile ghi **thẳng** vào sheet (không qua GAS `addTransaction`) nên hook cảnh báo
-  **tức thì** sau giao dịch sẽ KHÔNG tự kích hoạt. Cách xử lý:
-  - Đổi `checkThresholds_` từ hook-tức-thì sang **time-trigger dày** (vd mỗi giờ) đọc
-    sheet → gửi nếu chạm ngưỡng. `_AlertLog` chống spam vẫn dùng. (sửa nhẹ ở `gas/Code.gs`)
-  - (Tùy chọn thêm) `@capacitor/local-notifications` để báo **tức thì tại máy** ngay khi
-    ghi giao dịch — cho phản hồi nhanh, không thay email/Telegram.
+  **tức thì** sau giao dịch sẽ KHÔNG tự kích hoạt. Cách xử lý (ĐÃ CHỐT):
+  - Đổi `checkThresholds_` từ hook-tức-thì sang **time-trigger chạy MỖI NGÀY 1 lần**
+    (vd 8h sáng) đọc sheet → gửi email/Telegram nếu chạm ngưỡng. `_AlertLog` chống spam
+    vẫn dùng. (sửa nhẹ ở `gas/Code.gs` — gắn vào `installTriggers`)
+  - **CÓ thêm** `@capacitor/local-notifications`: báo **tức thì tại máy** ngay khi ghi
+    giao dịch (kiểm ngưỡng client-side bằng logic thuần `src/lib/alerts.ts`). Bù cho
+    việc email/Telegram chỉ còn theo ngày, vẫn cho phản hồi nhanh mà không tốn quota.
 - `getAlertConfig`/`setAlertSettings`/`setTelegramBotToken`: gọi qua Sheets (đọc/ghi
   `_Settings`) hoặc giữ ở màn Cài đặt bản web; mobile có thể chỉ đọc.
 
@@ -144,6 +146,6 @@ Drive share + thành viên chọn sheet qua Google Picker (giữ scope `drive.fi
 Access token chỉ giữ trong Preferences, không log. Gộp `batchGet`/`batchUpdate` để
 tránh quota ~60 ghi/phút/user (và quota thực thi GAS cho trigger cảnh báo).
 
-### Lưu ý chọn lựa kỹ thuật còn mở (không chặn, quyết khi code)
-- Tần suất time-trigger cảnh báo (mỗi giờ / vài giờ / ngày) — đổi độ "tức thì" lấy quota.
-- Có thêm local-notifications cho phản hồi tức thì hay không.
+### Chốt thêm (2026-06-23)
+- **Tần suất cảnh báo email/Telegram: MỖI NGÀY 1 lần** (time-trigger GAS).
+- **CÓ dùng `@capacitor/local-notifications`** cho cảnh báo tức thì tại máy.
